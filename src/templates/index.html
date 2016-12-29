@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+  </head>
+  <body>
+
+    <h1 id="welcomeMessage">Django Message Board</h1>
+
+    <form id="messageForm">
+      <label for="message">Message: </label>
+      <input type="text" name="message">
+      <input type="submit">
+    </form>
+
+    <div id="board"></div>
+
+    <script type="text/javascript">
+      // Note that the path doesn't matter right now; any WebSocket
+      // connection gets bumped over to WebSocket consumers
+      let room = 'chat'
+      let socket = new WebSocket(`ws://${window.location.host}/${room}/?{{ request.session.session_key }}`)
+      let board = document.getElementById('board')
+      let messageForm = document.getElementById('messageForm')
+
+      // websockets
+      socket.onmessage = function(e) {
+        let incomingMessage = e.data
+        let messageNode = document.createElement('div')
+        let date = new Date()
+        let dateOptions = {
+            weekday: "long", year: "numeric", month: "short",
+            day: "numeric", hour: "2-digit", minute: "2-digit"
+        }
+        let dateString = date.toLocaleTimeString("en-us", dateOptions)
+        messageNode.innerHTML =
+        `
+          <p><strong>User: </strong>${incomingMessage}</p>\n
+          <i>Sent: ${dateString}</i>\n
+        `
+        board.appendChild(messageNode)
+      }
+      messageForm.onsubmit = function(e) {
+        e.preventDefault()
+        let outboundMessage = e.target.message.value
+        socket.send(outboundMessage)
+        e.target.message.value = ''
+      }
+      socket.onopen = function() {
+        console.log('open')
+      }
+    </script>
+  </body>
+</html>
